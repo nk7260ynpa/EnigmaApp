@@ -13,6 +13,9 @@ plan/
 .swiftpm/
 Package.resolved
 
+# App bundle
+*.app/
+
 # Xcode
 *.xcodeproj/
 *.xcworkspace/
