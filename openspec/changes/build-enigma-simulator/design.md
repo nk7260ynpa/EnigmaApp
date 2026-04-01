@@ -81,9 +81,20 @@ EnigmaApp 是一個全新的 macOS 原生應用程式，目前僅有專案定義
 
 **理由**：加密引擎是應用程式的核心，必須確保邏輯正確性。歷史測試向量提供可靠的驗證基準。
 
+### 6. 啟動方式：run.sh 包裝 .app bundle
+
+**選擇**：提供 `run.sh` 腳本，建構 release 版本後將 executable 包裝為 .app bundle（含 Info.plist），再以 `open` 指令啟動
+
+**替代方案**：
+- 直接執行 `.build/debug/EnigmaApp`：SPM executable 缺少 app bundle 結構，macOS 無法正常顯示 SwiftUI 視窗
+- 使用 XcodeGen 生成 .xcodeproj：依賴額外工具安裝，且 Homebrew 環境可能有問題
+
+**理由**：SPM executable target 不產生 .app bundle，導致 macOS 無法將其識別為 GUI 應用程式（不顯示 Dock 圖示、不開啟視窗）。run.sh 零依賴地解決此問題，同時保留 project.yml 供需要 Xcode 專案的場景使用。
+
 ## Risks / Trade-offs
 
 - **程式碼生成 3D 模型的視覺品質有限** → 使用 PBR 材質與精細的光影設定提升質感，未來可替換為專業 3D 模型
 - **SceneKit 已非 Apple 主力發展框架** → 在 macOS 上仍然穩定且功能完整，且比 RealityKit 在 macOS 上更成熟
 - **3D 互動（拖曳轉子、接線板連線）實作複雜度高** → 分階段開發，先實作鍵盤互動，再逐步加入轉子與接線板操作
 - **歷史準確性驗證需要可靠的測試資料** → 使用多組已公開的 Enigma 測試向量交叉驗證
+- **SPM executable 不產生 .app bundle** → run.sh 腳本包裝解決，未來可遷移至正式 Xcode 專案
