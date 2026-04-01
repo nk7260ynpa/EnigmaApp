@@ -237,7 +237,7 @@ final class SceneViewModel {
     }
 
     /// 更新轉子顯示
-    /// 對容器節點 rotor_\(index) 設定旋轉，避免覆蓋子節點的橫放姿態
+    /// 只旋轉 rotor_spin_ 群組（盤面），窗口框架與標籤固定不動
     func updateRotorDisplays() {
         let positions = [
             machine.leftRotor.position,
@@ -246,18 +246,19 @@ final class SceneViewModel {
         ]
 
         for (index, position) in positions.enumerated() {
-            // 對容器節點旋轉（非 rotor_display_ 主體），保持圓柱體橫放姿態
-            let containerName = "rotor_\(index)"
-            if let containerNode = scene.rootNode.childNode(withName: containerName, recursively: true) {
-                let angle = CGFloat(position) * (.pi * 2.0 / 26.0)
+            let spinName = "rotor_spin_\(index)"
+            if let spinNode = scene.rootNode.childNode(withName: spinName, recursively: true) {
+                // 繞 X 軸旋轉（圓柱體經 Z 旋轉 π/2 後軸心指向 X）
+                // 負角度使 position 增加時字母向上滾入窗口
+                let angle = -CGFloat(position) * (.pi * 2.0 / 26.0)
                 SCNTransaction.begin()
                 SCNTransaction.animationDuration = 0.15
                 SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                containerNode.eulerAngles.x = angle
+                spinNode.eulerAngles.x = angle
                 SCNTransaction.commit()
             }
 
-            // 更新文字標籤
+            // 更新文字標籤（固定在容器上，不隨盤面旋轉）
             let labelName = "rotor_label_\(index)"
             if let labelNode = scene.rootNode.childNode(withName: labelName, recursively: true),
                let textGeom = labelNode.geometry as? SCNText {

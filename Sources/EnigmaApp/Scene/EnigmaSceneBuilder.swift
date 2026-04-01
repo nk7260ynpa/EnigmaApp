@@ -527,13 +527,18 @@ final class EnigmaSceneBuilder {
         let rotorGroup = SCNNode()
         rotorGroup.name = "rotor_\(index)"
 
+        // 旋轉群組 — 只有此群組會被旋轉，窗口/標籤固定在 rotorGroup
+        let spinGroup = SCNNode()
+        spinGroup.name = "rotor_spin_\(index)"
+        rotorGroup.addChildNode(spinGroup)
+
         // 轉子主體（依 index 使用不同色調）
         let cylinder = SCNCylinder(radius: rotorRadius, height: rotorWidth)
         cylinder.firstMaterial = rotorMaterial(index: index)
         let rotorBody = SCNNode(geometry: cylinder)
         rotorBody.name = "rotor_display_\(index)"
         rotorBody.eulerAngles.z = CGFloat.pi / 2
-        rotorGroup.addChildNode(rotorBody)
+        spinGroup.addChildNode(rotorBody)
 
         // 指輪（Finger Wheel）— 外圈 26 個凹槽
         let notchSize: CGFloat = 0.004
@@ -555,9 +560,8 @@ final class EnigmaSceneBuilder {
                 r * cos(angle),
                 r * sin(angle)
             )
-            // 旋轉指向圓心
             notchNode.eulerAngles.x = angle
-            rotorGroup.addChildNode(notchNode)
+            spinGroup.addChildNode(notchNode)
         }
 
         // 中心軸轂（Hub）
@@ -565,7 +569,7 @@ final class EnigmaSceneBuilder {
         hubOuter.firstMaterial = rotorHubMaterial()
         let hubOuterNode = SCNNode(geometry: hubOuter)
         hubOuterNode.eulerAngles.z = CGFloat.pi / 2
-        rotorGroup.addChildNode(hubOuterNode)
+        spinGroup.addChildNode(hubOuterNode)
 
         let hubInner = SCNCylinder(radius: 0.006, height: rotorWidth + 0.006)
         let hubInnerMat = SCNMaterial()
@@ -576,7 +580,7 @@ final class EnigmaSceneBuilder {
         hubInner.firstMaterial = hubInnerMat
         let hubInnerNode = SCNNode(geometry: hubInner)
         hubInnerNode.eulerAngles.z = CGFloat.pi / 2
-        rotorGroup.addChildNode(hubInnerNode)
+        spinGroup.addChildNode(hubInnerNode)
 
         // 刻度標記 — 轉子側面 26 條等距刻線
         for i in 0..<26 {
@@ -596,7 +600,7 @@ final class EnigmaSceneBuilder {
                 tickR * sin(angle)
             )
             tickNode.eulerAngles.x = angle
-            rotorGroup.addChildNode(tickNode)
+            spinGroup.addChildNode(tickNode)
         }
 
         // 邊緣凹槽裝飾（細圓環）
@@ -606,24 +610,26 @@ final class EnigmaSceneBuilder {
             let grooveNode = SCNNode(geometry: groove)
             grooveNode.position = SCNVector3(offset, 0, 0)
             grooveNode.eulerAngles.z = CGFloat.pi / 2
-            rotorGroup.addChildNode(grooveNode)
+            spinGroup.addChildNode(grooveNode)
         }
 
-        // 金屬框視窗
+        // === 以下為固定元件，不隨轉子旋轉 ===
+
+        // 金屬框視窗（固定）
         let windowFrameBox = SCNBox(width: 0.025, height: 0.005, length: 0.020, chamferRadius: 0.002)
         windowFrameBox.firstMaterial = rotorWindowFrameMaterial()
         let windowFrame = SCNNode(geometry: windowFrameBox)
         windowFrame.position = SCNVector3(0, rotorRadius + 0.002, 0)
         rotorGroup.addChildNode(windowFrame)
 
-        // 玻璃視窗
+        // 玻璃視窗（固定）
         let glassBox = SCNBox(width: 0.020, height: 0.003, length: 0.015, chamferRadius: 0.001)
         glassBox.firstMaterial = rotorWindowGlassMaterial()
         let glassNode = SCNNode(geometry: glassBox)
         glassNode.position = SCNVector3(0, rotorRadius + 0.004, 0)
         rotorGroup.addChildNode(glassNode)
 
-        // 字母顯示
+        // 字母顯示（固定）
         let text = SCNText(string: "A", extrusionDepth: 0.0005)
         text.font = NSFont.monospacedSystemFont(ofSize: 0.012, weight: .bold)
         text.flatness = 0.1
