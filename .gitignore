@@ -1,0 +1,12 @@
+# Log 檔案
+*.log
+
+# CLAUDE.md
+CLAUDE.md
+
+# Plan 資料夾
+plan/
+
+# OS 產生的檔案
+.DS_Store
+Thumbs.db
