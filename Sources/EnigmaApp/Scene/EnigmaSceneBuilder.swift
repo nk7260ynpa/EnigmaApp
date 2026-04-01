@@ -114,13 +114,63 @@ final class EnigmaSceneBuilder {
         return mat
     }
 
-    private func rotorMaterial() -> SCNMaterial {
+    /// 轉子材質（依 index 使用不同色調）
+    private func rotorMaterial(index: Int = 0) -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
-        mat.diffuse.contents = NSColor(red: 0.55, green: 0.52, blue: 0.48, alpha: 1.0)
+        let colors: [(CGFloat, CGFloat, CGFloat)] = [
+            (0.55, 0.52, 0.48),  // 左：銀灰
+            (0.50, 0.45, 0.38),  // 中：古銅
+            (0.48, 0.50, 0.52),  // 右：鋼藍灰
+        ]
+        let c = colors[index % colors.count]
+        mat.diffuse.contents = NSColor(red: c.0, green: c.1, blue: c.2, alpha: 1.0)
         mat.roughness.contents = 0.35
         mat.metalness.contents = 0.9
         return mat
+    }
+
+    /// 轉子軸轂材質
+    private func rotorHubMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.40, green: 0.38, blue: 0.35, alpha: 1.0)
+        mat.roughness.contents = 0.2
+        mat.metalness.contents = 0.95
+        return mat
+    }
+
+    // MARK: - 字母貼圖快取
+
+    private var letterTextureCache: [Character: NSImage] = [:]
+
+    /// 生成字母貼圖（白色粗體字母於黑色圓形背景）
+    private func letterTexture(for letter: Character) -> NSImage {
+        if let cached = letterTextureCache[letter] { return cached }
+
+        let size = NSSize(width: 64, height: 64)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        // 黑色圓形背景
+        NSColor(red: 0.12, green: 0.12, blue: 0.12, alpha: 1.0).setFill()
+        NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).fill()
+
+        // 白色字母
+        let str = String(letter)
+        let font = NSFont.systemFont(ofSize: 36, weight: .bold)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.white,
+        ]
+        let textSize = str.size(withAttributes: attrs)
+        let x = (size.width - textSize.width) / 2
+        let y = (size.height - textSize.height) / 2
+        str.draw(at: NSPoint(x: x, y: y), withAttributes: attrs)
+
+        image.unlockFocus()
+        letterTextureCache[letter] = image
+        return image
     }
 
     private func rotorWindowFrameMaterial() -> SCNMaterial {
@@ -373,24 +423,20 @@ final class EnigmaSceneBuilder {
         keyBody.name = "key_\(letter)"
         keyGroup.addChildNode(keyBody)
 
-        // 字母標籤
-        let text = SCNText(string: String(letter), extrusionDepth: 0.0004)
-        text.font = NSFont.systemFont(ofSize: 0.007, weight: .bold)
-        text.flatness = 0.1
-        text.firstMaterial = keyLabelMaterial()
+        // 字母貼圖平面（取代 SCNText，確保各角度清晰可讀）
+        let labelSize = keyRadius * 1.6
+        let labelPlane = SCNPlane(width: labelSize, height: labelSize)
+        let labelMat = SCNMaterial()
+        labelMat.diffuse.contents = letterTexture(for: letter)
+        labelMat.isDoubleSided = true
+        labelMat.lightingModel = .constant
+        labelPlane.firstMaterial = labelMat
 
-        let textNode = SCNNode(geometry: text)
-        textNode.name = "key_label_\(letter)"
-        let (min, max) = textNode.boundingBox
-        let textWidth = max.x - min.x
-        let textHeight = max.y - min.y
-        textNode.position = SCNVector3(
-            -textWidth / 2,
-            keyHeight / 2 + 0.0003,
-            textHeight / 2
-        )
-        textNode.eulerAngles.x = -CGFloat.pi / 2
-        keyGroup.addChildNode(textNode)
+        let labelNode = SCNNode(geometry: labelPlane)
+        labelNode.name = "key_label_\(letter)"
+        labelNode.position = SCNVector3(0, keyHeight / 2 + 0.0004, 0)
+        labelNode.eulerAngles.x = -CGFloat.pi / 2
+        keyGroup.addChildNode(labelNode)
 
         return keyGroup
     }
@@ -481,15 +527,79 @@ final class EnigmaSceneBuilder {
         let rotorGroup = SCNNode()
         rotorGroup.name = "rotor_\(index)"
 
-        // 轉子外殼（圓柱體）
+        // 轉子主體（依 index 使用不同色調）
         let cylinder = SCNCylinder(radius: rotorRadius, height: rotorWidth)
-        cylinder.firstMaterial = rotorMaterial()
+        cylinder.firstMaterial = rotorMaterial(index: index)
         let rotorBody = SCNNode(geometry: cylinder)
         rotorBody.name = "rotor_display_\(index)"
         rotorBody.eulerAngles.z = CGFloat.pi / 2
         rotorGroup.addChildNode(rotorBody)
 
-        // 轉子邊緣凹槽裝飾（細圓環）
+        // 指輪（Finger Wheel）— 外圈 26 個凹槽
+        let notchSize: CGFloat = 0.004
+        let notchDepth: CGFloat = 0.006
+        for i in 0..<26 {
+            let angle = CGFloat(i) * (2.0 * CGFloat.pi / 26.0)
+            let notchBox = SCNBox(
+                width: notchSize,
+                height: notchDepth,
+                length: rotorWidth + 0.002,
+                chamferRadius: 0.0005
+            )
+            notchBox.firstMaterial = metalTrimMaterial()
+            let notchNode = SCNNode(geometry: notchBox)
+
+            let r = rotorRadius + notchDepth / 2 - 0.001
+            notchNode.position = SCNVector3(
+                0,
+                r * cos(angle),
+                r * sin(angle)
+            )
+            // 旋轉指向圓心
+            notchNode.eulerAngles.x = angle
+            rotorGroup.addChildNode(notchNode)
+        }
+
+        // 中心軸轂（Hub）
+        let hubOuter = SCNCylinder(radius: 0.012, height: rotorWidth + 0.004)
+        hubOuter.firstMaterial = rotorHubMaterial()
+        let hubOuterNode = SCNNode(geometry: hubOuter)
+        hubOuterNode.eulerAngles.z = CGFloat.pi / 2
+        rotorGroup.addChildNode(hubOuterNode)
+
+        let hubInner = SCNCylinder(radius: 0.006, height: rotorWidth + 0.006)
+        let hubInnerMat = SCNMaterial()
+        hubInnerMat.lightingModel = .physicallyBased
+        hubInnerMat.diffuse.contents = NSColor(red: 0.25, green: 0.24, blue: 0.22, alpha: 1.0)
+        hubInnerMat.roughness.contents = 0.3
+        hubInnerMat.metalness.contents = 0.95
+        hubInner.firstMaterial = hubInnerMat
+        let hubInnerNode = SCNNode(geometry: hubInner)
+        hubInnerNode.eulerAngles.z = CGFloat.pi / 2
+        rotorGroup.addChildNode(hubInnerNode)
+
+        // 刻度標記 — 轉子側面 26 條等距刻線
+        for i in 0..<26 {
+            let angle = CGFloat(i) * (2.0 * CGFloat.pi / 26.0)
+            let tickBox = SCNBox(width: 0.001, height: 0.008, length: 0.001, chamferRadius: 0)
+            let tickMat = SCNMaterial()
+            tickMat.lightingModel = .physicallyBased
+            tickMat.diffuse.contents = NSColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
+            tickMat.metalness.contents = 0.5
+            tickBox.firstMaterial = tickMat
+
+            let tickNode = SCNNode(geometry: tickBox)
+            let tickR = rotorRadius - 0.003
+            tickNode.position = SCNVector3(
+                rotorWidth / 2 + 0.001,
+                tickR * cos(angle),
+                tickR * sin(angle)
+            )
+            tickNode.eulerAngles.x = angle
+            rotorGroup.addChildNode(tickNode)
+        }
+
+        // 邊緣凹槽裝飾（細圓環）
         for offset in [-rotorWidth / 2 + 0.002, rotorWidth / 2 - 0.002] as [CGFloat] {
             let groove = SCNTorus(ringRadius: rotorRadius - 0.001, pipeRadius: 0.001)
             groove.firstMaterial = metalTrimMaterial()
