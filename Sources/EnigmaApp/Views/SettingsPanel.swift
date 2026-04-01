@@ -32,78 +32,92 @@ struct SettingsPanel: View {
     private let letters = (0..<26).map { String(Character(UnicodeScalar($0 + Int(Character("A").asciiValue!))!)) }
 
     var body: some View {
-        Form {
-            // MARK: - 轉子選擇
-            Section("轉子選擇") {
-                Picker("左轉子", selection: $leftRotorName) {
-                    ForEach(rotorNames, id: \.self) { Text("Rotor \($0)") }
+        ScrollView {
+            Form {
+                // MARK: - 轉子選擇
+                Section("轉子選擇") {
+                    Picker("左轉子", selection: $leftRotorName) {
+                        ForEach(rotorNames, id: \.self) { Text("Rotor \($0)") }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("中轉子", selection: $middleRotorName) {
+                        ForEach(rotorNames, id: \.self) { Text("Rotor \($0)") }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("右轉子", selection: $rightRotorName) {
+                        ForEach(rotorNames, id: \.self) { Text("Rotor \($0)") }
+                    }
+                    .pickerStyle(.menu)
                 }
-                Picker("中轉子", selection: $middleRotorName) {
-                    ForEach(rotorNames, id: \.self) { Text("Rotor \($0)") }
-                }
-                Picker("右轉子", selection: $rightRotorName) {
-                    ForEach(rotorNames, id: \.self) { Text("Rotor \($0)") }
-                }
-            }
 
-            // MARK: - 轉子位置
-            Section("初始位置") {
-                Picker("左轉子", selection: $leftPosition) {
-                    ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                // MARK: - 轉子位置
+                Section("初始位置") {
+                    Picker("左轉子", selection: $leftPosition) {
+                        ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("中轉子", selection: $middlePosition) {
+                        ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("右轉子", selection: $rightPosition) {
+                        ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                    }
+                    .pickerStyle(.menu)
                 }
-                Picker("中轉子", selection: $middlePosition) {
-                    ForEach(0..<26, id: \.self) { Text(letters[$0]) }
-                }
-                Picker("右轉子", selection: $rightPosition) {
-                    ForEach(0..<26, id: \.self) { Text(letters[$0]) }
-                }
-            }
 
-            // MARK: - 環設定
-            Section("環設定 (Ring Setting)") {
-                Picker("左轉子", selection: $leftRing) {
-                    ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                // MARK: - 環設定
+                Section("環設定 (Ring Setting)") {
+                    Picker("左轉子", selection: $leftRing) {
+                        ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("中轉子", selection: $middleRing) {
+                        ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("右轉子", selection: $rightRing) {
+                        ForEach(0..<26, id: \.self) { Text(letters[$0]) }
+                    }
+                    .pickerStyle(.menu)
                 }
-                Picker("中轉子", selection: $middleRing) {
-                    ForEach(0..<26, id: \.self) { Text(letters[$0]) }
-                }
-                Picker("右轉子", selection: $rightRing) {
-                    ForEach(0..<26, id: \.self) { Text(letters[$0]) }
-                }
-            }
 
-            // MARK: - 反射器
-            Section("反射器") {
-                Picker("反射器", selection: $reflectorName) {
-                    ForEach(reflectorNames, id: \.self) { Text("Reflector \($0)") }
+                // MARK: - 反射器
+                Section("反射器") {
+                    Picker("反射器", selection: $reflectorName) {
+                        ForEach(reflectorNames, id: \.self) { Text("Reflector \($0)") }
+                    }
+                    .pickerStyle(.menu)
                 }
-            }
 
-            // MARK: - 接線板
-            Section("接線板 (Plugboard)") {
-                TextField("配對（例如：AB CD EF）", text: $plugboardInput)
-                    .textFieldStyle(.roundedBorder)
+                // MARK: - 接線板
+                Section("接線板 (Plugboard)") {
+                    TextField("配對（例如：AB CD EF）", text: $plugboardInput)
+                        .textFieldStyle(.roundedBorder)
 
-                if let error = plugboardError {
-                    Text(error)
-                        .foregroundColor(.red)
+                    if let error = plugboardError {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+
+                    Text("輸入字母對，以空格分隔（最多 13 組）")
                         .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
-                Text("輸入字母對，以空格分隔（最多 13 組）")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            // MARK: - 套用按鈕
-            Section {
-                Button("套用設定") {
-                    applySettings()
+                // MARK: - 套用按鈕
+                Section {
+                    Button("套用設定") {
+                        applySettings()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             }
+            .formStyle(.grouped)
         }
-        .padding()
+        .frame(maxWidth: 300)
+        .padding(.vertical)
         .onAppear {
             loadCurrentSettings()
         }

@@ -184,6 +184,7 @@ final class SceneViewModel {
         )
         inputText = ""
         outputText = ""
+        history.removeAll()
         turnOffLastLamp()
         updateRotorDisplays()
     }

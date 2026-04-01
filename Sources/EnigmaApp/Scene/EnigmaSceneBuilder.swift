@@ -2,30 +2,37 @@ import SceneKit
 import AppKit
 
 /// 使用 SceneKit 程式碼建構 Enigma 密碼機 3D 場景
+/// 尺寸參考歷史 Wehrmacht Enigma I 實機
 final class EnigmaSceneBuilder {
 
     // MARK: - 尺寸常數（以公尺為單位，SceneKit 預設）
 
-    /// 機體外殼
+    /// 機體外殼（歷史實機約 340×150×270mm）
     private let caseWidth: CGFloat = 0.34
-    private let caseHeight: CGFloat = 0.06
-    private let caseDepth: CGFloat = 0.28
+    private let caseHeight: CGFloat = 0.13
+    private let caseDepth: CGFloat = 0.27
 
-    /// 按鍵
-    private let keyRadius: CGFloat = 0.008
+    /// 按鍵（歷史實機按鍵直徑約 12–15mm）
+    private let keyRadius: CGFloat = 0.007
     private let keyHeight: CGFloat = 0.005
-    private let keySpacing: CGFloat = 0.024
+    private let keySpacing: CGFloat = 0.022
+    /// 按鍵圓環邊框
+    private let keyRingRadius: CGFloat = 0.009
+    private let keyRingHeight: CGFloat = 0.002
 
     /// 燈板
-    private let lampRadius: CGFloat = 0.007
-    private let lampSpacing: CGFloat = 0.024
+    private let lampRadius: CGFloat = 0.006
+    private let lampSpacing: CGFloat = 0.022
+    /// 燈板底座燈罩
+    private let lampBaseRadius: CGFloat = 0.009
+    private let lampBaseHeight: CGFloat = 0.003
 
-    /// 轉子
-    private let rotorRadius: CGFloat = 0.025
-    private let rotorWidth: CGFloat = 0.02
-    private let rotorSpacing: CGFloat = 0.06
+    /// 轉子（歷史實機直徑約 100–110mm）
+    private let rotorRadius: CGFloat = 0.050
+    private let rotorWidth: CGFloat = 0.018
+    private let rotorSpacing: CGFloat = 0.040
 
-    /// 鍵盤排列（依歷史 Enigma 鍵盤佈局）
+    /// 鍵盤排列（歷史 Enigma QWERTZ 佈局）
     private let keyboardRows: [[Character]] = [
         ["Q", "W", "E", "R", "T", "Z", "U", "I", "O"],
         ["A", "S", "D", "F", "G", "H", "J", "K"],
@@ -41,28 +48,43 @@ final class EnigmaSceneBuilder {
 
     // MARK: - PBR 材質
 
-    /// 木質材質
     private func woodMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
-        mat.diffuse.contents = NSColor(red: 0.45, green: 0.30, blue: 0.18, alpha: 1.0)
-        mat.roughness.contents = 0.7
+        mat.diffuse.contents = NSColor(red: 0.42, green: 0.28, blue: 0.16, alpha: 1.0)
+        mat.roughness.contents = 0.75
         mat.metalness.contents = 0.0
         mat.normal.intensity = 0.3
         return mat
     }
 
-    /// 金屬按鍵材質
-    private func keyMetalMaterial() -> SCNMaterial {
+    private func darkWoodMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
-        mat.diffuse.contents = NSColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0)
-        mat.roughness.contents = 0.3
-        mat.metalness.contents = 0.8
+        mat.diffuse.contents = NSColor(red: 0.30, green: 0.20, blue: 0.12, alpha: 1.0)
+        mat.roughness.contents = 0.65
+        mat.metalness.contents = 0.0
         return mat
     }
 
-    /// 按鍵字母材質
+    private func keyMetalMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.12, green: 0.12, blue: 0.12, alpha: 1.0)
+        mat.roughness.contents = 0.35
+        mat.metalness.contents = 0.7
+        return mat
+    }
+
+    private func keyRingMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.72, green: 0.68, blue: 0.60, alpha: 1.0)
+        mat.roughness.contents = 0.25
+        mat.metalness.contents = 0.95
+        return mat
+    }
+
     private func keyLabelMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
@@ -72,7 +94,6 @@ final class EnigmaSceneBuilder {
         return mat
     }
 
-    /// 燈泡玻璃材質（熄滅狀態）
     private func lampMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
@@ -84,27 +105,52 @@ final class EnigmaSceneBuilder {
         return mat
     }
 
-    /// 轉子金屬材質
+    private func lampBaseMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.18, green: 0.18, blue: 0.18, alpha: 1.0)
+        mat.roughness.contents = 0.5
+        mat.metalness.contents = 0.6
+        return mat
+    }
+
     private func rotorMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
-        mat.diffuse.contents = NSColor(red: 0.6, green: 0.58, blue: 0.55, alpha: 1.0)
-        mat.roughness.contents = 0.4
+        mat.diffuse.contents = NSColor(red: 0.55, green: 0.52, blue: 0.48, alpha: 1.0)
+        mat.roughness.contents = 0.35
         mat.metalness.contents = 0.9
         return mat
     }
 
-    /// 接線板面板材質
+    private func rotorWindowFrameMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.70, green: 0.65, blue: 0.55, alpha: 1.0)
+        mat.roughness.contents = 0.2
+        mat.metalness.contents = 0.95
+        return mat
+    }
+
+    private func rotorWindowGlassMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.92, green: 0.90, blue: 0.82, alpha: 1.0)
+        mat.roughness.contents = 0.1
+        mat.metalness.contents = 0.0
+        mat.transparency = 0.7
+        return mat
+    }
+
     private func plugboardPanelMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
-        mat.diffuse.contents = NSColor(red: 0.12, green: 0.12, blue: 0.12, alpha: 1.0)
+        mat.diffuse.contents = NSColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1.0)
         mat.roughness.contents = 0.6
         mat.metalness.contents = 0.3
         return mat
     }
 
-    /// 接線板插孔材質
     private func plugSocketMaterial() -> SCNMaterial {
         let mat = SCNMaterial()
         mat.lightingModel = .physicallyBased
@@ -114,101 +160,101 @@ final class EnigmaSceneBuilder {
         return mat
     }
 
+    private func metalTrimMaterial() -> SCNMaterial {
+        let mat = SCNMaterial()
+        mat.lightingModel = .physicallyBased
+        mat.diffuse.contents = NSColor(red: 0.65, green: 0.60, blue: 0.50, alpha: 1.0)
+        mat.roughness.contents = 0.2
+        mat.metalness.contents = 0.95
+        return mat
+    }
+
     // MARK: - 場景建構
 
-    /// 建構完整的 Enigma 密碼機 3D 場景
     func buildScene(in scene: SCNScene) {
         let rootNode = scene.rootNode
 
-        // 攝影機
         setupCamera(in: rootNode)
-
-        // 光源
         setupLighting(in: rootNode)
-
-        // 環境
         setupEnvironment(in: scene)
 
         // 機體外殼
         let caseNode = buildCase()
         rootNode.addChildNode(caseNode)
 
-        // 鍵盤
+        // 鍵盤 — 機體上表面靠前方
         let keyboardNode = buildKeyboard()
-        keyboardNode.position = SCNVector3(0, caseHeight / 2 + 0.001, 0.04)
+        keyboardNode.position = SCNVector3(0, caseHeight / 2 + 0.001, 0.03)
         rootNode.addChildNode(keyboardNode)
 
-        // 燈板
+        // 燈板 — 鍵盤後方
         let lampboardNode = buildLampboard()
         lampboardNode.position = SCNVector3(0, caseHeight / 2 + 0.001, -0.04)
         rootNode.addChildNode(lampboardNode)
 
-        // 轉子
+        // 轉子 — 機體後上方
         let rotorAssembly = buildRotorAssembly()
-        rotorAssembly.position = SCNVector3(0, caseHeight / 2 + 0.035, -0.095)
+        rotorAssembly.position = SCNVector3(0, caseHeight / 2 + 0.055, -0.10)
         rootNode.addChildNode(rotorAssembly)
 
-        // 接線板
+        // 接線板 — 機體前方面板
         let plugboardNode = buildPlugboard()
-        plugboardNode.position = SCNVector3(0, -0.01, 0.16)
-        plugboardNode.eulerAngles.x = CGFloat.pi * 0.35
+        plugboardNode.position = SCNVector3(0, 0, caseDepth / 2 + 0.01)
+        plugboardNode.eulerAngles.x = CGFloat.pi * 0.40
         rootNode.addChildNode(plugboardNode)
     }
 
-    // MARK: - 攝影機
+    // MARK: - 攝影機（配合新尺寸）
 
     private func setupCamera(in rootNode: SCNNode) {
         let cameraNode = SCNNode()
         cameraNode.name = "camera"
         cameraNode.camera = SCNCamera()
-        cameraNode.camera?.fieldOfView = 45
+        cameraNode.camera?.fieldOfView = 40
         cameraNode.camera?.zNear = 0.01
         cameraNode.camera?.zFar = 100
-        // Bloom 後處理效果
         cameraNode.camera?.bloomIntensity = 0.5
         cameraNode.camera?.bloomThreshold = 0.8
         cameraNode.camera?.bloomBlurRadius = 10
 
-        cameraNode.position = SCNVector3(0, 0.25, 0.35)
-        cameraNode.look(at: SCNVector3(0, 0, 0))
+        // 拉遠攝影機以容納更高的機體
+        cameraNode.position = SCNVector3(0, 0.35, 0.45)
+        cameraNode.look(at: SCNVector3(0, 0.04, -0.02))
         rootNode.addChildNode(cameraNode)
     }
 
-    // MARK: - 光源
+    // MARK: - 光源（配合新尺寸調整位置）
 
     private func setupLighting(in rootNode: SCNNode) {
-        // 主光源（方向光）
         let mainLight = SCNNode()
         mainLight.name = "mainLight"
         mainLight.light = SCNLight()
         mainLight.light?.type = .directional
-        mainLight.light?.intensity = 800
+        mainLight.light?.intensity = 900
         mainLight.light?.color = NSColor(white: 0.95, alpha: 1.0)
         mainLight.light?.castsShadow = true
         mainLight.light?.shadowMode = .deferred
         mainLight.light?.shadowSampleCount = 8
         mainLight.light?.shadowRadius = 3
-        mainLight.position = SCNVector3(0.3, 0.5, 0.3)
+        mainLight.position = SCNVector3(0.4, 0.6, 0.4)
         mainLight.look(at: SCNVector3(0, 0, 0))
         rootNode.addChildNode(mainLight)
 
-        // 補光（柔和環境光）
         let ambientLight = SCNNode()
         ambientLight.name = "ambientLight"
         ambientLight.light = SCNLight()
         ambientLight.light?.type = .ambient
-        ambientLight.light?.intensity = 300
+        ambientLight.light?.intensity = 350
         ambientLight.light?.color = NSColor(red: 0.9, green: 0.85, blue: 0.8, alpha: 1.0)
         rootNode.addChildNode(ambientLight)
 
-        // 填充光（從側面）
         let fillLight = SCNNode()
         fillLight.name = "fillLight"
         fillLight.light = SCNLight()
         fillLight.light?.type = .directional
-        fillLight.light?.intensity = 300
+        fillLight.light?.intensity = 250
         fillLight.light?.color = NSColor(red: 0.8, green: 0.85, blue: 1.0, alpha: 1.0)
-        fillLight.position = SCNVector3(-0.3, 0.3, -0.1)
+        fillLight.position = SCNVector3(-0.4, 0.4, -0.2)
         fillLight.look(at: SCNVector3(0, 0, 0))
         rootNode.addChildNode(fillLight)
     }
@@ -216,22 +262,16 @@ final class EnigmaSceneBuilder {
     // MARK: - 環境
 
     private func setupEnvironment(in scene: SCNScene) {
-        // 環境光遮蔽
-        scene.rootNode.childNodes.forEach { node in
-            node.geometry?.firstMaterial?.ambientOcclusion.intensity = 0.5
-        }
-
-        // 背景色
-        scene.background.contents = NSColor(red: 0.15, green: 0.15, blue: 0.18, alpha: 1.0)
+        scene.background.contents = NSColor(red: 0.13, green: 0.13, blue: 0.16, alpha: 1.0)
     }
 
-    // MARK: - 機體外殼
+    // MARK: - 機體外殼（歷史尺寸）
 
     private func buildCase() -> SCNNode {
         let caseNode = SCNNode()
         caseNode.name = "enigma_case"
 
-        // 底座
+        // 主體箱體
         let baseBox = SCNBox(
             width: caseWidth,
             height: caseHeight,
@@ -243,24 +283,54 @@ final class EnigmaSceneBuilder {
         baseNode.name = "case_base"
         caseNode.addChildNode(baseNode)
 
-        // 後方斜面（轉子蓋板）
+        // 上蓋板（打開狀態，角度約 25°）
         let lidBox = SCNBox(
-            width: caseWidth,
-            height: 0.04,
-            length: 0.08,
+            width: caseWidth - 0.005,
+            height: 0.008,
+            length: caseDepth * 0.45,
             chamferRadius: 0.003
         )
-        lidBox.firstMaterial = woodMaterial()
+        lidBox.firstMaterial = darkWoodMaterial()
         let lidNode = SCNNode(geometry: lidBox)
         lidNode.name = "case_lid"
-        lidNode.position = SCNVector3(0, caseHeight / 2 + 0.015, -0.10)
-        lidNode.eulerAngles.x = -CGFloat.pi * 0.15
+        // 蓋板鉸鏈在後方邊緣
+        let lidPivotZ = -caseDepth / 2
+        lidNode.pivot = SCNMatrix4MakeTranslation(0, 0, CGFloat(lidBox.length / 2))
+        lidNode.position = SCNVector3(0, caseHeight / 2 + 0.001, lidPivotZ)
+        lidNode.eulerAngles.x = -CGFloat.pi * 25.0 / 180.0
         caseNode.addChildNode(lidNode)
+
+        // 前方面板邊框（接線板背板）
+        let frontPanelBox = SCNBox(
+            width: caseWidth,
+            height: caseHeight * 0.6,
+            length: 0.006,
+            chamferRadius: 0.002
+        )
+        frontPanelBox.firstMaterial = darkWoodMaterial()
+        let frontPanel = SCNNode(geometry: frontPanelBox)
+        frontPanel.name = "case_front_panel"
+        frontPanel.position = SCNVector3(0, -caseHeight * 0.1, caseDepth / 2 + 0.003)
+        caseNode.addChildNode(frontPanel)
+
+        // 金屬鉸鏈裝飾（上蓋板兩側）
+        for side in [-1.0, 1.0] as [CGFloat] {
+            let hinge = SCNCylinder(radius: 0.004, height: 0.015)
+            hinge.firstMaterial = metalTrimMaterial()
+            let hingeNode = SCNNode(geometry: hinge)
+            hingeNode.position = SCNVector3(
+                side * (caseWidth / 2 - 0.015),
+                caseHeight / 2 + 0.002,
+                -caseDepth / 2 + 0.005
+            )
+            hingeNode.eulerAngles.z = CGFloat.pi / 2
+            caseNode.addChildNode(hingeNode)
+        }
 
         return caseNode
     }
 
-    // MARK: - 鍵盤
+    // MARK: - 鍵盤（含圓環金屬邊框）
 
     private func buildKeyboard() -> SCNNode {
         let keyboardNode = SCNNode()
@@ -270,7 +340,6 @@ final class EnigmaSceneBuilder {
             let rowOffset = CGFloat(rowIndex) * keySpacing
             let colCount = CGFloat(row.count)
             let rowStartX = -(colCount - 1) * keySpacing / 2
-            // 奇數行偏移半格
             let stagger: CGFloat = rowIndex == 1 ? keySpacing * 0.5 : 0
 
             for (colIndex, letter) in row.enumerated() {
@@ -286,10 +355,16 @@ final class EnigmaSceneBuilder {
         return keyboardNode
     }
 
-    /// 建構單一按鍵
     private func buildKey(letter: Character) -> SCNNode {
         let keyGroup = SCNNode()
         keyGroup.name = "key_\(letter)"
+
+        // 圓環金屬邊框
+        let ring = SCNTorus(ringRadius: keyRingRadius, pipeRadius: 0.001)
+        ring.firstMaterial = keyRingMaterial()
+        let ringNode = SCNNode(geometry: ring)
+        ringNode.position = SCNVector3(0, keyHeight / 2, 0)
+        keyGroup.addChildNode(ringNode)
 
         // 按鍵圓柱體
         let keyCylinder = SCNCylinder(radius: keyRadius, height: keyHeight)
@@ -299,14 +374,13 @@ final class EnigmaSceneBuilder {
         keyGroup.addChildNode(keyBody)
 
         // 字母標籤
-        let text = SCNText(string: String(letter), extrusionDepth: 0.0005)
-        text.font = NSFont.systemFont(ofSize: 0.008, weight: .bold)
+        let text = SCNText(string: String(letter), extrusionDepth: 0.0004)
+        text.font = NSFont.systemFont(ofSize: 0.007, weight: .bold)
         text.flatness = 0.1
         text.firstMaterial = keyLabelMaterial()
 
         let textNode = SCNNode(geometry: text)
         textNode.name = "key_label_\(letter)"
-        // 置中文字
         let (min, max) = textNode.boundingBox
         let textWidth = max.x - min.x
         let textHeight = max.y - min.y
@@ -321,7 +395,7 @@ final class EnigmaSceneBuilder {
         return keyGroup
     }
 
-    // MARK: - 燈板
+    // MARK: - 燈板（含圓形底座燈罩）
 
     private func buildLampboard() -> SCNNode {
         let lampboardNode = SCNNode()
@@ -346,21 +420,28 @@ final class EnigmaSceneBuilder {
         return lampboardNode
     }
 
-    /// 建構單一燈泡
     private func buildLamp(letter: Character) -> SCNNode {
         let lampGroup = SCNNode()
         lampGroup.name = "lamp_\(letter)"
+
+        // 圓形底座燈罩
+        let baseCylinder = SCNCylinder(radius: lampBaseRadius, height: lampBaseHeight)
+        baseCylinder.firstMaterial = lampBaseMaterial()
+        let baseNode = SCNNode(geometry: baseCylinder)
+        baseNode.position = SCNVector3(0, -lampBaseHeight / 2, 0)
+        lampGroup.addChildNode(baseNode)
 
         // 燈泡球體
         let sphere = SCNSphere(radius: lampRadius)
         sphere.firstMaterial = lampMaterial()
         let lampBody = SCNNode(geometry: sphere)
         lampBody.name = "lamp_\(letter)"
+        lampBody.position = SCNVector3(0, lampBaseHeight / 2, 0)
         lampGroup.addChildNode(lampBody)
 
         // 字母標籤
         let text = SCNText(string: String(letter), extrusionDepth: 0.0003)
-        text.font = NSFont.systemFont(ofSize: 0.006, weight: .medium)
+        text.font = NSFont.systemFont(ofSize: 0.005, weight: .medium)
         text.flatness = 0.1
         let textMat = SCNMaterial()
         textMat.diffuse.contents = NSColor(red: 0.3, green: 0.25, blue: 0.2, alpha: 1.0)
@@ -371,7 +452,7 @@ final class EnigmaSceneBuilder {
         let textWidth = max.x - min.x
         textNode.position = SCNVector3(
             -textWidth / 2,
-            lampRadius + 0.001,
+            lampRadius + lampBaseHeight / 2 + 0.001,
             0
         )
         textNode.eulerAngles.x = -CGFloat.pi / 2
@@ -380,7 +461,7 @@ final class EnigmaSceneBuilder {
         return lampGroup
     }
 
-    // MARK: - 轉子
+    // MARK: - 轉子（歷史尺寸，含金屬框窗口）
 
     private func buildRotorAssembly() -> SCNNode {
         let assemblyNode = SCNNode()
@@ -396,7 +477,6 @@ final class EnigmaSceneBuilder {
         return assemblyNode
     }
 
-    /// 建構單一轉子顯示
     private func buildRotor(index: Int) -> SCNNode {
         let rotorGroup = SCNNode()
         rotorGroup.name = "rotor_\(index)"
@@ -409,20 +489,33 @@ final class EnigmaSceneBuilder {
         rotorBody.eulerAngles.z = CGFloat.pi / 2
         rotorGroup.addChildNode(rotorBody)
 
-        // 位置指示視窗（小方塊）
-        let windowBox = SCNBox(width: 0.018, height: 0.003, length: 0.014, chamferRadius: 0.001)
-        let windowMat = SCNMaterial()
-        windowMat.lightingModel = .physicallyBased
-        windowMat.diffuse.contents = NSColor(red: 0.95, green: 0.93, blue: 0.85, alpha: 1.0)
-        windowMat.roughness.contents = 0.2
-        windowBox.firstMaterial = windowMat
-        let windowNode = SCNNode(geometry: windowBox)
-        windowNode.position = SCNVector3(0, rotorRadius + 0.001, 0)
-        rotorGroup.addChildNode(windowNode)
+        // 轉子邊緣凹槽裝飾（細圓環）
+        for offset in [-rotorWidth / 2 + 0.002, rotorWidth / 2 - 0.002] as [CGFloat] {
+            let groove = SCNTorus(ringRadius: rotorRadius - 0.001, pipeRadius: 0.001)
+            groove.firstMaterial = metalTrimMaterial()
+            let grooveNode = SCNNode(geometry: groove)
+            grooveNode.position = SCNVector3(offset, 0, 0)
+            grooveNode.eulerAngles.z = CGFloat.pi / 2
+            rotorGroup.addChildNode(grooveNode)
+        }
+
+        // 金屬框視窗
+        let windowFrameBox = SCNBox(width: 0.025, height: 0.005, length: 0.020, chamferRadius: 0.002)
+        windowFrameBox.firstMaterial = rotorWindowFrameMaterial()
+        let windowFrame = SCNNode(geometry: windowFrameBox)
+        windowFrame.position = SCNVector3(0, rotorRadius + 0.002, 0)
+        rotorGroup.addChildNode(windowFrame)
+
+        // 玻璃視窗
+        let glassBox = SCNBox(width: 0.020, height: 0.003, length: 0.015, chamferRadius: 0.001)
+        glassBox.firstMaterial = rotorWindowGlassMaterial()
+        let glassNode = SCNNode(geometry: glassBox)
+        glassNode.position = SCNVector3(0, rotorRadius + 0.004, 0)
+        rotorGroup.addChildNode(glassNode)
 
         // 字母顯示
         let text = SCNText(string: "A", extrusionDepth: 0.0005)
-        text.font = NSFont.monospacedSystemFont(ofSize: 0.01, weight: .bold)
+        text.font = NSFont.monospacedSystemFont(ofSize: 0.012, weight: .bold)
         text.flatness = 0.1
         let textMat = SCNMaterial()
         textMat.diffuse.contents = NSColor.black
@@ -434,8 +527,8 @@ final class EnigmaSceneBuilder {
         let tw = max.x - min.x
         textNode.position = SCNVector3(
             -tw / 2,
-            rotorRadius + 0.002,
-            0.005
+            rotorRadius + 0.005,
+            0.006
         )
         textNode.eulerAngles.x = -CGFloat.pi / 2
         rotorGroup.addChildNode(textNode)
@@ -449,13 +542,11 @@ final class EnigmaSceneBuilder {
         let plugboardNode = SCNNode()
         plugboardNode.name = "plugboard"
 
-        // 面板背景
         let panelBox = SCNBox(width: 0.30, height: 0.08, length: 0.005, chamferRadius: 0.002)
         panelBox.firstMaterial = plugboardPanelMaterial()
         let panelNode = SCNNode(geometry: panelBox)
         plugboardNode.addChildNode(panelNode)
 
-        // 26 個插孔（排成兩排）
         let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         let topRow = Array(alphabet[0..<13])
         let bottomRow = Array(alphabet[13..<26])
@@ -476,19 +567,16 @@ final class EnigmaSceneBuilder {
         return plugboardNode
     }
 
-    /// 建構單一接線板插孔
     private func buildPlugSocket(letter: Character) -> SCNNode {
         let socketGroup = SCNNode()
         socketGroup.name = "plug_\(letter)"
 
-        // 插孔圓柱
         let cylinder = SCNCylinder(radius: 0.004, height: 0.003)
         cylinder.firstMaterial = plugSocketMaterial()
         let socketBody = SCNNode(geometry: cylinder)
         socketBody.eulerAngles.x = CGFloat.pi / 2
         socketGroup.addChildNode(socketBody)
 
-        // 字母標籤
         let text = SCNText(string: String(letter), extrusionDepth: 0.0002)
         text.font = NSFont.systemFont(ofSize: 0.004, weight: .medium)
         text.flatness = 0.1
@@ -508,7 +596,6 @@ final class EnigmaSceneBuilder {
 
     // MARK: - 接線板連線
 
-    /// 在接線板上新增連線視覺化
     func addPlugWire(from letterA: Int, to letterB: Int, in scene: SCNScene) {
         guard let plugboard = scene.rootNode.childNode(withName: "plugboard", recursively: true) else { return }
 
@@ -521,7 +608,6 @@ final class EnigmaSceneBuilder {
         let posA = socketA.position
         let posB = socketB.position
 
-        // 以圓柱體模擬電線
         let dx = posB.x - posA.x
         let dy = posB.y - posA.y
         let dz = posB.z - posA.z
@@ -538,19 +624,14 @@ final class EnigmaSceneBuilder {
         let wireNode = SCNNode(geometry: wireCylinder)
         wireNode.name = "plugwire_\(charA)\(charB)"
 
-        // 定位到兩插孔的中點
         wireNode.position = SCNVector3(
             (posA.x + posB.x) / 2,
             (posA.y + posB.y) / 2,
             (posA.z + posB.z) / 2 + 0.005
         )
 
-        // 旋轉使圓柱體指向兩點之間
-        let direction = SCNVector3(dx, dy, dz)
         wireNode.look(at: SCNVector3(posB.x, posB.y, posB.z + 0.005))
         wireNode.eulerAngles.x += CGFloat.pi / 2
-
-        _ = direction  // 避免未使用警告
 
         plugboard.addChildNode(wireNode)
     }
