@@ -1,8 +1,9 @@
 # Log 檔案
 *.log
 
-# CLAUDE.md
+# Claude
 CLAUDE.md
+.claude/
 
 # Plan 資料夾
 plan/
