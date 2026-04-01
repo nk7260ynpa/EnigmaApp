@@ -8,6 +8,18 @@ CLAUDE.md
 # Plan 資料夾
 plan/
 
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+build/
+
 # OS 產生的檔案
 .DS_Store
 Thumbs.db
