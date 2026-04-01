@@ -152,7 +152,8 @@ final class SceneViewModel {
 
         switch target {
         case .rotor(let index, let startPosition):
-            let steps = Int(translation.y / 15.0)
+            // AppKit Y 軸向上為正：向上拖曳遞減（字母往前），向下拖曳遞增
+            let steps = Int(-translation.y / 15.0)
             let newPosition = (startPosition + steps + 26) % 26
 
             switch index {
@@ -236,6 +237,7 @@ final class SceneViewModel {
     }
 
     /// 更新轉子顯示
+    /// 對容器節點 rotor_\(index) 設定旋轉，避免覆蓋子節點的橫放姿態
     func updateRotorDisplays() {
         let positions = [
             machine.leftRotor.position,
@@ -244,17 +246,15 @@ final class SceneViewModel {
         ]
 
         for (index, position) in positions.enumerated() {
-            let nodeName = "rotor_display_\(index)"
-            if let rotorNode = scene.rootNode.childNode(withName: nodeName, recursively: true) {
-                // 旋轉到對應位置
+            // 對容器節點旋轉（非 rotor_display_ 主體），保持圓柱體橫放姿態
+            let containerName = "rotor_\(index)"
+            if let containerNode = scene.rootNode.childNode(withName: containerName, recursively: true) {
                 let angle = CGFloat(position) * (.pi * 2.0 / 26.0)
-                let rotateAction = SCNAction.rotateTo(
-                    x: CGFloat(angle), y: 0, z: 0,
-                    duration: 0.15,
-                    usesShortestUnitArc: true
-                )
-                rotateAction.timingMode = .easeInEaseOut
-                rotorNode.runAction(rotateAction)
+                SCNTransaction.begin()
+                SCNTransaction.animationDuration = 0.15
+                SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                containerNode.eulerAngles.x = angle
+                SCNTransaction.commit()
             }
 
             // 更新文字標籤
