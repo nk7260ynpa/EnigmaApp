@@ -1,0 +1,8 @@
+schema: spec-driven
+
+context: |
+  專案：EnigmaApp — 二戰德軍 Enigma 密碼機 macOS 3D 模擬器
+  技術棧：Swift, SwiftUI, SceneKit, Metal
+  平台：macOS 14+ (Apple Silicon)
+  授權：Apache License 2.0
+  慣例：Conventional Commits（繁體中文）、Google Style Guides
