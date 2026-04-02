@@ -70,10 +70,18 @@ swift build
 # 執行測試
 swift test
 
+# 建構 DMG 安裝檔
+./build_dmg.sh
+
 # 以 Xcode 開啟（需安裝 xcodegen）
 xcodegen generate
 open EnigmaApp.xcodeproj
 ```
+
+### 安裝方式
+
+執行 `./build_dmg.sh` 後，DMG 檔會產生在 `build/EnigmaApp-1.0.0.dmg`。
+開啟 DMG 後將 EnigmaApp 拖入 Applications 資料夾即可完成安裝。
 
 ## 快捷鍵
 
